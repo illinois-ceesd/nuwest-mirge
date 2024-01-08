@@ -18,15 +18,20 @@ Usage:
 
 from logging import info, error
 from subprocess import Popen, PIPE
+import base64
 
-from IPython.display import display, SVG
+from IPython.display import display, HTML
 from IPython.core.magic import Magics
 from IPython.core.magic import line_cell_magic
 from IPython.core.magic import line_magic
 from IPython.core.magic import magics_class
 
-def show_svg(d):
-    display(SVG(data=d))
+
+_html_template='<img width="{}" src="data:image/svg+xml;base64,{}" >'
+
+def show_svg(svg, width="100%"):
+    text = _html_template.format(width, base64.b64encode(svg).decode())
+    return display(HTML(text))
 
 def run_graphviz(s, layout_engine='dot'):
     """Execute dot with a layout and return a raw SVG image, or None."""
