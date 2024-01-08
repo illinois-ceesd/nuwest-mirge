@@ -6,6 +6,6 @@ dependencies:
   - pyopencl
   - islpy
   - pip
+  - matplotlib
   - pip:
-    - matplotlib
     - "r requirements.txt"
