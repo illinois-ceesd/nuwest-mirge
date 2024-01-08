@@ -6,6 +6,12 @@ dependencies:
   - pyopencl
   - islpy
   - pip
-  - matplotlib
   - pip:
-    - "r requirements.txt"
+    - matplotlib
+    - "git+https://github.com/inducer/pymbolic.git#egg=pymbolic"
+    - "git+https://github.com/inducer/loopy.git#egg=loopy"
+    - "git+https://github.com/inducer/pytato.git#egg=pytato"
+    - "git+https://github.com/inducer/modepy.git#egg=modepy"
+    - "git+https://github.com/inducer/arraycontext.git#egg=arraycontext"
+    - "git+https://github.com/inducer/meshmode.git#egg=meshmode"
+    - "git+https://github.com/inducer/grudge.git#egg=grudge"
