@@ -18,6 +18,6 @@ Click [here](https://ssl.tiker.net/nextcloud/s/txJZaDSAoAQkWLz) to download the 
 
 To follow along with the demos:
 
--[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/illinois-ceesd/nuwest-mirge/HEAD)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/illinois-ceesd/nuwest-mirge/HEAD)
 
 Then enter the `cleared-demos` folder (or `demos` to see the solutions filled in).
