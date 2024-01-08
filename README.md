@@ -1,4 +1,8 @@
-# Disclaimer
+# MIRGE tutorial at NUWEST 2024
+
+[NUWEST: NNSA-University Workshop on Exascale Simulation Technologies](https://illinois-ceesd.github.io/nuwest/)
+
+## Disclaimer
 
 This material is, as of this writing (December 1, 2023) largely unchanged from
 what was used for a dry run of the Illinois aspects of NUWEST at NCSA in the
@@ -10,7 +14,7 @@ well change, even substantially.
 
 Click [here](https://ssl.tiker.net/nextcloud/s/txJZaDSAoAQkWLz) to download the slides.
 
-# MIRGE Code-Along Instructions
+## MIRGE Code-Along Instructions
 
 To follow along with the demos:
 
