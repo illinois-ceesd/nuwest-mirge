@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - pocl
+  - pyopencl
+  - islpy
+  - pip
+  - pip:
+    - matplotlib
+    - "r requirements.txt"
