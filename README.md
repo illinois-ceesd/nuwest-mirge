@@ -10,7 +10,7 @@ fall of 2023. It should be viewed as, perhaps, a general indication of the forma
 (which we viewed as generally successful), but the detailed content may very
 well change, even substantially.
 
-# MIRGE Presentation
+## MIRGE Presentation
 
 Click [here](https://ssl.tiker.net/nextcloud/s/txJZaDSAoAQkWLz) to download the slides.
 
