@@ -1,7 +1,7 @@
 #+TITLE: MIRGE: Math \to IR \to Generation \to Execution
 #+AUTHOR: Andreas Kloeckner
-#+DATE: September 15, 2023
-# #+BEAMER_HEADER: \institute{University of Illinois}
+#+DATE: January 18, 2024
+#+BEAMER_HEADER: \institute{University of Illinois}
 
 # IMPORTANT: Do *not* delete trailing whitespace here!
 # It messes up empty slide headings.
@@ -13,6 +13,7 @@
 #+startup: beamer content indent
 
 #+LATEX_CLASS: beamer
+#+LATEX_CLASS_OPTIONS: [aspectratio=169]
 
 #+BEAMER_HEADER: \input{ceesd-macros.tex}
 
@@ -25,21 +26,22 @@
 #+BEAMER_HEADER: \def\credit#1{{\scriptsize[#1]}}
 #+BEAMER_HEADER: \let\b=\boldsymbol
 
-# #+BEAMER_HEADER: \AtBeginSection[] {
-# #+BEAMER_HEADER:   \begin{frame}[shrink]{Outline}
-# #+BEAMER_HEADER:     \linespread{0.8}
-# #+BEAMER_HEADER:     \tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/show/hide]
-# #+BEAMER_HEADER:   \end{frame}
-# #+BEAMER_HEADER: }
+#+BEAMER_HEADER: \AtBeginSection[] {
+#+BEAMER_HEADER:   \begin{frame}[shrink]{Outline}
+#+BEAMER_HEADER:     \linespread{0.8}
+#+BEAMER_HEADER:     \tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/show/hide]
+#+BEAMER_HEADER:   \end{frame}
+#+BEAMER_HEADER: }
 
 #+BEAMER_HEADER: \usetikzlibrary{fit}
 #+BEAMER_HEADER: \def\evalprint#1{{\pgfmathtruncatemacro{\mathresult}{#1}\mathresult}}
 
-#+BEAMER_HEADER: \setbeamertemplate{headline}[text line]{\strut\hfill github.com/illinois-ceesd/NCSA-WEST}
+#+BEAMER_HEADER: \setbeamertemplate{headline}[text line]{\strut\hfill github.com/illinois-ceesd/nuwest-mirge}
 
-#+BEAMER_HEADER: \newcommand{\software}[1]{\textsc{#1}}
+#+BEAMER_HEADER: \newcommand{\software}[1]{\emph{#1}}
 
-* Goals and Approaches
+* MIRGE
+** Goals and Approaches
 *** ``Programming HPC Machines is Hard''
 
 #+BEGIN_CENTER
@@ -68,7 +70,7 @@ Instead:
   - Use modeling as a guide
 #  - That said: some things will remain unexplained
 
-In this workshop: *Ideas and tools* to\dots
+In this talk: *Ideas and tools* to\dots
 - increase human effectiveness and efficiency
 - help with separation of concerns
 - help focus on the core issues
@@ -301,62 +303,81 @@ https://github.com/inducer/pyopencl \tiny Also: \software{PyCUDA}
 \credit{Khronos Group, python.org}
 #+END_CENTER
 
-*** MIRGE
-Two *intermediate representations*:
-- *High level:* an array-valued expression graph (=pytato=)
-  - think `describe a numpy computation'
-  - no concept of time (loops) or space (memory)
-  - only describes the desired result
-  - similar to JAX/Tensorflow
-- *Low level:* Assignments =LHS[i,j,k] = RHS[i,j,k]= on polyhedra
-  - =loopy= can transform those and generate code for them
+*** MIRGE: Stages of a Computation
+# Additional points to hit:
+# - Two tricks: Results are intermittently symbolic, can sub in placeholders to get whole-program IR
 
-\medskip
-Plus a *user interface* (=arraycontext=)
-  - Switch between numpy-likes (including =pytato=)
-  - Capture information on when to evaluate
-  - Define transform paths
+**** Description
+     :PROPERTIES:
+     :BEAMER_col: 0.7
+     :END:
 
-* The Two Intermediate Representations
-*** Working with Expression Trees                                :noexport:
+_Stage 1:_ *Capture an Array DFG* \software{Array Context} \to \software{Pytato}
 
-Demos: Expression trees
+- Goal: Build an Array-Valued Data Flow Graph (DFG)
+  - By *tracing* execution of a \software{numpy}-ish array program
+- Use *Lazy Evaluation* to do so:
+  - Feed in (symbolic) placeholder data
+  - Return an opaque value that `remembers' what was done
 
-*** Building a Mini Pytato
-
-Demo: Mini Pytato
-*** Lessons from Mini Pytato
-
-- Graphs are an appropriate data structure for expressions
-- A shape axis becomes a loop
-- Processing graphs is necessarily recursive
-- Naive handling of common subexpressions leads to exponential complexity
-
-*** Pytato vs Mini Pytato
-**** Col 1
-  :PROPERTIES:
-  :BEAMER_col: 0.45
-  :END:
-- Computations with multiple results (=DictOfNamedArrays=)
-- Constants (=DataWrapper=)
-- Many more operators, functions
-- Arbitrary shapes (including symbolic)
-- Broadcasting
-- Slicing, Indexing
+_Stage 2:_ *Transform the DAG* \software{Array Context} and \software{Pytato}
+- E.g. fold constants, apply math simplifications
   
-**** Col 2
-  :PROPERTIES:
-  :BEAMER_col: 0.45
-  :END:
+_Stage 3:_ *Rewrite to Scalar IR* \software{Pytato} \to \software{Loopy}
+- Introduce time, memory, loops
   
-- Reductions (e.g. sums over axes)
-- =einsum=, matrix products
-- Metadata ("tags") on arrays, axes
-- Visualization
-- Distributed compute
-- "Call loopy" as an expression node
+_Stage 4:_ *Scalar IR Transformations* \software{Array Context} and \software{Loopy}
+- E.g. parallelize, optimize for the memory hierarchy
+  
+_Stage 5:_ *Emit Target Code* /Loopy/ \to /OpenCL/
+    
 
-*** Design Decisions :noexport:
+**** Figure
+     :PROPERTIES:
+     :BEAMER_col: 0.3
+     :END:
+#+BEGIN_CENTER
+\begin{tikzpicture}[
+  scale=0.01,thick,
+  annode/.style={xshift=0.1cm},
+  intermed/.style={fill=blue!30},
+  ninput/.style={fill=red!30,draw,ellipse},
+  noutput/.style={fill=green!30,draw,ellipse},
+  ]
+    \node [ninput] (A) at (152,479) {};
+    \node [intermed] (C) at (80,295) {};
+    \node [intermed] (B) at (152,387) {};
+    \node [intermed] (E) at (27,203) {};
+    \node [intermed] (G) at (99,111) {};
+    \node [intermed] (F) at (99,203) {};
+    \node [intermed] (Q) at (211,203) {};
+    \node [intermed] (P) at (152,295) {};
+    \node [noutput] (R) at (154,19) {};
+    \draw [->] (C) ..controls (86.498,263.54) and (90.075,246.22)  .. (F);
+    \draw [->] (G) ..controls (117.56,79.946) and (129.19,60.501)  .. (R);
+    \draw [->] (B) ..controls (127.97,356.29) and (111.67,335.46)  .. (C);
+    \draw [->] (P) ..controls (152.48,229.34) and (153.38,104.7)  .. (R);
+    \draw [->] (E) ..controls (51.032,172.29) and (67.335,151.46)  .. (G);
+    \draw [->] (Q) ..controls (198.62,156.83) and (183.37,101.89)  .. (168,56) .. controls (166.95,52.874) and (165.81,49.619)  .. (R);
+    \draw [->] (F) ..controls (99,171.54) and (99,154.22)  .. (G);
+    \draw [->] (B) ..controls (170.23,355.09) and (181.2,333.78)  .. (188,314) .. controls (197.39,286.69) and (203.58,254.21)  .. (Q);
+    \draw [->] (A) ..controls (152,447.54) and (152,430.22)  .. (B);
+    \draw [->] (B) ..controls (152,355.54) and (152,338.22)  .. (P);
+    \draw [->] (C) ..controls (62.11,263.95) and (50.908,244.5)  .. (E);
+\end{tikzpicture}
+
+\small
+\mbox{B = f(A)} $\quad$
+\mbox{C = g(B)} $\quad$
+\mbox{E = f(C)} $\quad$
+\mbox{F = h(C)} $\quad$
+\mbox{G = s(E,F)} $\quad$
+\mbox{P = p(B)} $\quad$
+\mbox{Q = q(B)} $\quad$
+\mbox{R = r(G,P,Q)}
+#+END_CENTER
+** The Two Intermediate Representations
+*** Array IR: Design Decisions 
 - Shapes and data types are eager (i.e. known immediately)
 - Data is lazy
   # (future goal: data-dependent shapes)
@@ -365,26 +386,9 @@ Demo: Mini Pytato
 - Only encode math
   - Do not encode memory layout
   - Do not encode whether a result is stored
+- `Does not know about time and space': just an expression
 
-*** =IndexLambda=: Representation using Scalar Expressions :noexport:
-
-**** Observation from mini pytato
-
-Just need a (scalar) expression for array entry =array[i,j]=.
-
-**** (end)
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
-
-*Idea:* Use that
-- as a large part of the intermediate representation
-- as a pathway toward code generation
-
-  (many operations ``lower'' to scalar expressions)
-
-Demo: =IndexLambda=
-*** Common Subexpressions :noexport:
+*** Common Subexpressions                                        :noexport:
 
 Demo: Common Subexpressions
 
@@ -539,10 +543,14 @@ knl = lp.tag_inames(knl, {"e_outer": "g.0"})
 
 =github.com/inducer/loopy=
 
-*** A Taste of Loopy
+*** In the Code-Along
 
-Demo: A Taste of Loopy (on your own)
-*** Code Transforms :noexport:
+Topics for the code-along:
+- Expression trees/graphs as program representation
+- Let's code a mini \software{pytato}
+- Let's build a finite difference solver with the MIRGE stack
+- Getting your feet wet with \software{Loopy}
+*** Code Transforms                                              :noexport:
 **** Clipart
 :PROPERTIES:
 :BEAMER_col: 0.3
@@ -601,7 +609,80 @@ Can use these for computer-aided performance model fitting[fn:3].
 
 [fn:2] Verdoolaege et al. 2007
 [fn:3] Stevens, K 2020
-* MIRGE in Practice
+
+* Code-Along
+
+*** Working with Expression Trees
+
+Demos: Expression trees
+
+*** TODO Array languages and Numpy
+
+APL
+
+/Perhaps a surprise:/ There's an APL hiding in Numpy
+
+*** Building a Mini Pytato
+
+Demo: Mini Pytato
+*** Lessons from Mini Pytato
+
+- Graphs are an appropriate data structure for expressions
+- A shape axis becomes a loop
+- Processing graphs is necessarily recursive
+- Naive handling of common subexpressions leads to exponential complexity
+
+*** Array Comprehensions / =IndexLambda=
+
+*Observation:* To define an array, just need
+- shape
+- a (scalar) expression for array entry =array[i,j]=.
+
+*Examples:*
+- A $10\times 5$ array defined by $(i,j)\mapsto 3i+5j$
+- A $10\times 10$ array defined by $(i,j)\mapsto \delta_{i,j}$
+- A $10\times 10$ array defined by $(i,j)\mapsto a[i,j]+b[i]$
+
+**** (end)
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+*Idea:* Use that
+- as a large part of the intermediate representation
+- as a pathway toward code generation
+
+  (many operations ``lower'' to scalar expressions)
+
+*** Pytato vs Mini Pytato
+**** Col 1
+  :PROPERTIES:
+  :BEAMER_col: 0.45
+  :END:
+- Computations with multiple results (=DictOfNamedArrays=)
+- Constants (=DataWrapper=)
+- Many more operators, functions
+- Arbitrary shapes (including symbolic)
+- Broadcasting
+- Slicing, Indexing
+  
+**** Col 2
+  :PROPERTIES:
+  :BEAMER_col: 0.45
+  :END:
+  
+- Reductions (e.g. sums over axes)
+- =einsum=, matrix products
+- Metadata ("tags") on arrays, axes
+- Visualization
+- Distributed compute
+- "Call loopy" as an expression node
+
+*** A Taste of Loopy
+
+Demo: A Taste of Loopy
+
+*** TODO Array context: why /another/ layer?
 *** What is an array context?
 
 - =actx.np=
@@ -653,14 +734,15 @@ Returns a function that
   - Freeze superset graph: redundant codegen, computation
   - Goal: be smarter in this situation
 
-*** Actx subclassing for domain-specific transformation :noexport:
+** MIRGE in Practice
+*** Actx subclassing for domain-specific transformation          :noexport:
 
 - Array context is where program transformation logic lives
 - Idea: Subclass to define increasingly specialized array contexts
 - Override =actx.transform_dag=, =actx.transform_loopy=
   
-* Distributed Execution :noexport:
-*** Representing distributed computation
+** Distributed Execution                                          :noexport:
+**** Representing distributed computation
 - Computation described by a global graph
 - Each rank represents a piece of that graph
 - With send/receive nodes at the "cut points"
@@ -669,7 +751,7 @@ Returns a function that
 
 Demo: Representing Distributed Computation
 
-*** Executing a distributed computation (for now)
+**** Executing a distributed computation (for now)
 
 Off-line:
 - Idea: partition DAG into pieces small enough to guarantee absence of deadlock
@@ -684,10 +766,9 @@ On-line:
 
 Important: only with =compile=, not =freeze= (for now)
 
-*** Communicating array containers
+**** Communicating array containers
 
 - Unlike "normal" MPI: Cannot rely on order to identify sent data
 - Need robust way to generate unique, nested tags
 - Tags may be any hashable value
 - Translated to actual integer MPI tags during off-line preparation
-

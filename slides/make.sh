@@ -30,4 +30,4 @@ else
   done
 fi
 
-cp talk.pdf ~/nc/shared/misc/2023-09-ncsa-west.pdf
+cp talk.pdf ~/nc/shared/misc/2024-01-nuwest.pdf
