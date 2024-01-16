@@ -612,7 +612,7 @@ Can use these for computer-aided performance model fitting[fn:3].
 
 * Code-Along
 
-*** Working with Expression Trees
+*** Working with Expression Trees :noexport:
 
 Demos: Expression trees
 
