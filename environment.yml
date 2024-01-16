@@ -5,6 +5,7 @@ dependencies:
   - pocl
   - pyopencl
   - islpy
+  - graphviz
   - pip
   - pip:
     - matplotlib
