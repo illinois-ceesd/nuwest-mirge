@@ -26,7 +26,7 @@ for nb in $INPUTDIR/**/*.ipynb; do
   CONV_DIR="$OUTPUTDIR/$RELDIR"
   mkdir -p "$CONV_DIR"
   CONV_IPYNB="$CONV_DIR/$BN"
-  with_echo "$MYDIR/demos/ipython-demo-tools/prepare-ipynb" clear-output clear-marked-inputs "$nb" "$CONV_IPYNB"
+  with_echo "$MYDIR/demos/ipython-demo-tools/prepare-ipynb" clear-output clear-and-collapse-marked-inputs "$nb" "$CONV_IPYNB"
 done
 
 for nb in $INPUTDIR/*.py; do
