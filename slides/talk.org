@@ -90,7 +90,7 @@ MIRGE: *Ideas and tools* to\dots
 #+ATTR_LATEX: :height 0.7\textheight
 [[./media/ok_cns.pdf]]
 
-(Simplicial DG for a Compressible Navier-Stokes Operator)
+(Simplicial DG for a Compressible Navier-Stokes Operator on Titan V)
 
 *** MIRGE: Stages of a Computation
 # Additional points to hit:
@@ -217,7 +217,7 @@ If familiar: a little like `fully vectorized Matlab'
      :BEAMER_col: 0.8
      :END:
 - Data is computed lazily
-  - "Looking at the data" is costly
+  - "Looking at the data" costly: ask expliclitly (=freeze=)
   - Fine: =np.where(x > 15, 1, 0)=
   - Not fine: =if x[0] > 15: print("BAD")=
 - "In-place" modification is not allowed
@@ -244,8 +244,8 @@ Replacing numpy:
 Why?
 - `Real' numpy used alongside, e.g. by supporting libraries
 - Avoids =np.mystuff(...)=: The =numpy= namespace belongs to numpy.
+  - Natural place for additional API: E.g. =actx.freeze()=
 - Avoids global state for device selection (e.g. Jax) 
-- Natural place for additional API: E.g. =actx.freeze()=
 - Can be subclassed by user to supply transform strategies
 
 \medskip
@@ -465,6 +465,19 @@ Can use these for computer-aided performance model fitting[fn:3].
 
 * Code-Along
 
+*** Getting on the Jupyterhub
+- Primary (NCSA)
+
+  https://ceesd.class.ncsa.illinois.edu/jupyter/
+
+  User / Password from paper snippets
+
+- Fallback (Homebrew)
+
+  https://andreask.cs.illinois.edu/nuwest
+
+  User name: Pick your favorite! / Password: (announced if needed)
+  
 *** Building a Mini Pytato
 
 Notebook: Mini Pytato
@@ -558,7 +571,7 @@ Returns a function that
 - Potential gotchas
   - Freeze same graph again: redundant codegen, computation
   - Freeze superset graph: redundant codegen, computation
-  - Goal: be smarter in this situation
+#  - Goal: be smarter in this situation
 
 *** What and why: polyhedral?
 
