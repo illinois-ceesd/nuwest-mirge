@@ -169,7 +169,7 @@ _Stage 5:_ *Emit Target Code* /Loopy/ \to /OpenCL/
 #+END_CENTER
 *** Numpy, Array programming
 
-Numpy is an /array programming language/. For the examples, let =a= have shape =(10, 20)= and =b= have shape =(20,)=.
+Numpy is an /array programming language/. What can you do with that?
 
 - =a + b - 3=
 - =a[:, 4].reshape(10, 1) + b=
@@ -179,6 +179,9 @@ Numpy is an /array programming language/. For the examples, let =a= have shape =
 - =np.where(a > 3, 0, 1)=
 - =np.einsum("ij,j->i", a, b)=
 - =np.sum(a, axis=0)=
+- =np.concatenate(a, axis=0)=
+
+If familiar: a little like `fully vectorized Matlab'
 
 *** The Case for Code Transformation
 
