@@ -18,7 +18,7 @@
 #+BEAMER_HEADER: \input{ceesd-macros.tex}
 
 #+LATEX_COMPILER: pdflatex
-#+OPTIONS: H:3 toc:t ':t tasks:t
+#+OPTIONS: H:3 toc:nil ':t tasks:t
 #+BEAMER_THEME: default
 #+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col) %8BEAMER_OPT(Opt)
 
@@ -26,12 +26,14 @@
 #+BEAMER_HEADER: \def\credit#1{{\scriptsize[#1]}}
 #+BEAMER_HEADER: \let\b=\boldsymbol
 
-#+BEAMER_HEADER: \AtBeginSection[] {
-#+BEAMER_HEADER:   \begin{frame}[shrink]{Outline}
-#+BEAMER_HEADER:     \linespread{0.8}
-#+BEAMER_HEADER:     \tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/show/hide]
-#+BEAMER_HEADER:   \end{frame}
-#+BEAMER_HEADER: }
+# #+BEAMER_HEADER: \AtBeginSection[] {
+# #+BEAMER_HEADER:   \begin{frame}[shrink]{Outline}
+# #+BEAMER_HEADER:     \linespread{0.8}
+# #+BEAMER_HEADER:     \tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/show/hide]
+# #+BEAMER_HEADER:   \end{frame}
+# #+BEAMER_HEADER: }
+#+BEAMER_HEADER: \AtBeginSection[] { }
+#+BEAMER_HEADER: \AtBeginSubsection[] { }
 
 #+BEAMER_HEADER: \usetikzlibrary{fit}
 #+BEAMER_HEADER: \def\evalprint#1{{\pgfmathtruncatemacro{\mathresult}{#1}\mathresult}}
@@ -59,21 +61,19 @@ CPUs, GPUs: all subject to similar design pressures
      :PROPERTIES:
      :BEAMER_col: 0.7
      :END:
-Not:
-- `Go-fast stripes' / Black-box / 4,000\times faster
-
-Instead:
-- Build a quantitative understanding of what is possible (modeling)
-- Iteratively approach that limit
-  - Be an active participant
+Goal:
+- Build a quantitative understanding of what is possible
+  - I.e. use modeling
+  - Use tools to help
+- Iteratively approach that limit, with human involvement
+  - I.e. not a black-box compiler
   - Expect some exposed wiring: *understanding required*
   - Use modeling as a guide
 #  - That said: some things will remain unexplained
 
-In this talk: *Ideas and tools* to\dots
+MIRGE: *Ideas and tools* to\dots
 - increase human effectiveness and efficiency
 - help with separation of concerns
-- help focus on the core issues
   
 **** Clip art
      :PROPERTIES:
@@ -93,215 +93,6 @@ In this talk: *Ideas and tools* to\dots
 [[./media/ok_cns.pdf]]
 
 (Simplicial DG for a Compressible Navier-Stokes Operator)
-
-*** The Case for Code Transformation
-
-**** Clip art
-     :PROPERTIES:
-     :BEAMER_col: 0.3
-     :END:
-
-#+BEGIN_CENTER
-#+ATTR_LATEX: :width \textwidth
-[[./media/transform.pdf]]
-
-\credit{Bootstrap Icons}
-#+END_CENTER
-
-**** Text
-     :PROPERTIES:
-     :BEAMER_col: 0.7
-     :END:
-     
-- Separation of concerns:
-
-  additive rather than multiplicative effort
-- Conciseness: code is the enemy
-- Abstraction:
-
-  /not/ specifying details prematurely is a virtue
-
-Approach:
-- Program is a data structure
-- Start with `math' (\approx =numpy=)
-- Gradually add detail
-- Annotations at most *descriptive*, not *prescriptive*
-# - `Own' your problem representation
-  
-As opposed to:
-- Directives (a la OpenMP/OpenACC)
-- Libraries
-
-*** The Case for Just-in-Time Compilation :noexport:
-
-**** Clip art
-     :PROPERTIES:
-     :BEAMER_col: 0.3
-     :END:
-
-#+BEGIN_CENTER
-#+ATTR_LATEX: :width \textwidth
-[[./media/hourglass.pdf]]
-
-\credit{Bootstrap Icons}
-#+END_CENTER
-
-**** Text
-     :PROPERTIES:
-     :BEAMER_col: 0.7
-     :END:
-- What is `compile time'?
-- At runtime is when you have the most information
-  - Target device
-  - Desired problem
-- JIT gives ability to specialize for available knowledge
-- Avoids false trade-off beetween generality and cost
-  (``abstraction penalty'')
-- Challenge: JIT cost must remain under control
-  - At least: /Caching/ easily avoids /repeated/ expense
-
-*** The Case for OpenCL :noexport:
-
-**** Text
-     :PROPERTIES:
-     :BEAMER_col: 0.7
-     :END:
-
-- Host-side programming interface (library)
-- Device-side programming language (C)
-- Device-side intermediate repr. (SPIR-V)
-
-\medskip
-- Same compute abstraction as everyone else
-
-  (focus on *low-level*)
-- Device/vendor-neutral
-  - On current and upcoming leadership-class machines
-  - Will run even with no GPU in sight (e.g. Github CI)
-- Just-In-Time compilation built-in
-- Open-source implementations
-
-  (Pocl, Intel GPU, AMD*, rusticl, clover)
-- Mostly retain access to vendor-specific libraries/capabilties
-# - *What is the alternative?*
-
-**** Logo
-     :PROPERTIES:
-     :BEAMER_col: 0.3
-     :END:
-
-#+BEGIN_CENTER
-#+ATTR_LATEX: :width \textwidth
-[[./media/opencl-logo.pdf]]
-
-\credit{Khronos Group}
-
-#+END_CENTER
-*** Uncooperative vendor? :noexport:
-**** Text
-     :PROPERTIES:
-     :BEAMER_col: 0.55
-     :END:
-
-- OpenCL commoditizes compute
-- Not universally popular with vendors
-- Not an unchangeable fate
-
-\medskip
-pocl-cuda:
-- Based on =nvptx= LLVM target from Google
-- Started by James Price (Bristol)
-- Maintained by a team at Tampere Tech U
-- We at Illinois helped a bit
-- LLVM keeps improving
-- Possible to talk to CUDA libraries
-- Allows profiling
-
-**** Graph
-     :PROPERTIES:
-     :BEAMER_col: 0.45
-     :END:
-
-#+ATTR_LATEX: :width 0.4\textwidth
-[[./media/pocl-nvidia-SHOC-April17.png]]
-
-#+LATEX: {\tiny \credit{\url{http://portablecl.org/cuda-backend.html}}}
-
-#+ATTR_LATEX: :width 0.8\textwidth
-[[./media/pocl-nvidia-SHOC-October20.png]]
-
-#+LATEX: {\tiny \credit{\url{http://portablecl.org/pocl-1.6.html}}}
-*** The Case for Python
-
-**** Text
-     :PROPERTIES:
-     :BEAMER_col: 0.7
-     :END:
-Frees up mental bandwidth\dots
-
-\hfill for the /actually/ difficult bits
-
-\medskip
-How?
-- *Not* shiny, *not* exciting
-- *No/few* distractions
-  - Duck typing, automatic memory management
-- Emphasizes readability
-- Rich ecosystem of sci-comp related software
-- Good for gluing: less reinventing
-- Easy to deploy
-- `Fast enough' for logistics and code generation
-
-**** Py Logo
-     :PROPERTIES:
-     :BEAMER_col: 0.2
-     :END:
-
-#+BEGIN_CENTER
-
-#+ATTR_LATEX: :width \textwidth
-[[./media/python-logo-no-shadow.png]]
-
-\credit{python.org}
-#+END_CENTER
-
-*** PyOpenCL :noexport:
-
-**** Text
-     :PROPERTIES:
-     :BEAMER_col: 0.7
-     :END:
-\software{PyOpenCL} has 
-
-- Direct access to low-level OpenCL 
-  - Efficiency-minded: compiler cache, kernel enqueue
-  - Made safe for use with Python
-
-    (e.g. `nanny events', deletion semantics)
-- A bare-bones \software{numpy}-like array type
-  - Parallel RNGs, indexing
-  - Numpy-like, but limited broadcasting, most operations are 1D
-- Foundational algorithm templates
-  - Reduction, scan, sort (radix, bitonic), unique, filter, CSR build
-
-\medskip
-https://github.com/inducer/pyopencl \tiny Also: \software{PyCUDA}
-
-**** Py Logo
-     :PROPERTIES:
-     :BEAMER_col: 0.3
-     :END:
-
-#+BEGIN_CENTER
-
-#+ATTR_LATEX: :width 0.7\textwidth
-[[./media/python-logo-no-shadow.png]]
-
-#+ATTR_LATEX: :width \textwidth
-[[./media/opencl-logo.pdf]]
-
-\credit{Khronos Group, python.org}
-#+END_CENTER
 
 *** MIRGE: Stages of a Computation
 # Additional points to hit:
@@ -376,29 +167,101 @@ _Stage 5:_ *Emit Target Code* /Loopy/ \to /OpenCL/
 \mbox{Q = q(B)} $\quad$
 \mbox{R = r(G,P,Q)}
 #+END_CENTER
+*** Numpy, Array programming
+
+Numpy is an /array programming language/. For the examples, let =a= have shape =(10, 20)= and =b= have shape =(20,)=.
+
+- =a + b - 3=
+- =a[:, 4].reshape(10, 1) + b=
+- Compute pairwise distances between point clouds
+- =a[i]= where =i= is an array of indices
+- =a>3=
+- =np.where(a > 3, 0, 1)=
+- =np.einsum("ij,j->i", a, b)=
+- =np.sum(a, axis=0)=
+
+*** The Case for Code Transformation
+
+**** Clip art
+     :PROPERTIES:
+     :BEAMER_col: 0.3
+     :END:
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :width \textwidth
+[[./media/transform.pdf]]
+
+\credit{Bootstrap Icons}
+#+END_CENTER
+
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.7
+     :END:
+     
+- Separation of concerns:
+
+  additive rather than multiplicative effort
+- Conciseness: code is the enemy
+- Abstraction:
+
+  /not/ specifying details prematurely is a virtue
+
+Approach:
+- Program is a data structure
+- Start with `math' (\approx =numpy=)
+- Gradually add detail
+- Annotations at most *descriptive*, not *prescriptive*
+# - `Own' your problem representation
+  
+As opposed to:
+- Directives (a la OpenMP/OpenACC)
+- Libraries
+
+*** The Case for Just-in-Time Compilation
+
+**** Clip art
+     :PROPERTIES:
+     :BEAMER_col: 0.3
+     :END:
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :width \textwidth
+[[./media/hourglass.pdf]]
+
+\credit{Bootstrap Icons}
+#+END_CENTER
+
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.7
+     :END:
+- What is `compile time'?
+- At runtime is when you have the most information
+  - Target device
+  - Desired problem
+- JIT gives ability to specialize for available knowledge
+- Avoids false trade-off beetween generality and cost
+  (``abstraction penalty'')
+- Challenge: JIT cost must remain under control
+  - At least: /Caching/ easily avoids /repeated/ expense
+
 ** The Two Intermediate Representations
-*** Array IR: Design Decisions 
-- Shapes and data types are eager (i.e. known immediately)
-- Data is lazy
-  # (future goal: data-dependent shapes)
-- Disallow in-place modification
-- Retain enough information to reconstruct user program
-- Only encode math
-  - Do not encode memory layout
-  - Do not encode whether a result is stored
-- `Does not know about time and space': just an expression
+*** Array IR: User-Visible Restrictions
 
-*** Common Subexpressions                                        :noexport:
+- Data is computed lazily
+  - "Looking at the data" is costly
+  - Fine: =np.where(x > 15, 1, 0)=
+  - Not fine: =if x[0] > 15: print("BAD")=
+- "In-place" modification is not allowed
+  - Once created, an array is constant
+- Looping over an array is very costly
+  - Resulting DAG will be proportional to array size
+  - Goal: DAG is $O(1)$ in problem size
+- Does not encode memory layout (i.e. no stride trickery)
 
-Demo: Common Subexpressions
-
-*** Common Subexpressions :noexport:
-
-- Every Mapper in pytato will 'collapse' identical expressions
-  into the same (not just equal) objects
-- This turns the *tree* into a *graph*
-- Separate from the decision to allocate a temporary!
-*** Lowering to Loopy: Decisions to Make
+*** TODO Numpy switcheroo: The array context
+*** Lowering to Loopy: Decisions to Make                         :noexport:
 - Which results to store in memory
   - OpenCL/GPU Kernels start and end in memory (\to kernel fusion)
   - Data reuse only *within* a kernel
@@ -442,6 +305,238 @@ Needs:
 - \tiny /T. Ben-Nun et al./ ``Stateful Dataflow Multigraphs: A Data-Centric Model for High-Performance Parallel Programs.'', SC `19. (2019)
 \normalsize
 
+*** Loopy: A Glimpse
+
+\[
+  a_i = \sum_{j=1}^{N_q} w_j \partial \psi_i(x_j) \left( \sum_{k=1}^{N_{\text{DoF}}} u_k \partial \phi_k(x_j) \right)
+\]
+\bigskip
+#+BEGIN_SRC python
+knl = lp.make_kernel(
+    "{[e,i,j,k]: 0<=e<nelements and 0<=i,k<ndofs and 0<=j<nq}",
+    """
+    quad(e, j) := sum(k, u[k,e] * phi[k, j])
+    a[e,i] = sum(j, w[j] * psi[i,j] * quad(e, j))
+    """)
+#+END_SRC
+Transformations:
+#+BEGIN_SRC python
+knl = lp.split_iname(knl, "e", 128)
+knl = lp.tag_inames(knl, {"e_outer": "g.0"})
+#+END_SRC
+
+=github.com/inducer/loopy=
+
+*** In the Code-Along
+
+Roadmap for the code-along:
+- Let's code a mini \software{pytato}
+  - Expression trees/graphs as program representation
+- Let's build a finite difference solver with the MIRGE stack
+- Getting your feet wet with \software{Loopy}
+*** Code Transforms                                              :noexport:
+**** Clipart
+:PROPERTIES:
+:BEAMER_col: 0.3
+:END:
+#+ATTR_LATEX: :width \textwidth
+[[./media/transform-crop.pdf]]
+
+**** Content
+:PROPERTIES:
+:BEAMER_col: 0.6
+:END:
+
+- Unroll
+- Stride changes (Row/column/something major)
+- Prefetch
+- Precompute
+- Tile
+- Reorder loops
+- Fix constants
+- Parallelize (Thread/Workgroup)
+- Affine map loop domains
+- Texture-based data access
+- Loop collapse
+
+*** Even More Code Transforms :noexport:
+**** Content
+:PROPERTIES:
+:BEAMER_col: 0.6
+:END:
+- Kernel and Loop *Fusion*
+- *Scans* and *Reductions*
+- Global Barrier by *Kernel Fission*
+- Explicit-SIMD *Vectorization*
+- *Reuse* of Temporary Storage
+- SoA \to AoS
+- Buffering, *Storage substitution*
+- Save flops using Distributive Law
+- Arbitrary nesting of *Data Layouts*
+- Realization of *ILP*
+- Array compression/reindexing [Seghir, et al. `06]
+**** Clipart
+:PROPERTIES:
+:BEAMER_col: 0.4
+:END:
+  
+#+ATTR_LATEX: :width \textwidth
+[[./media/transform-crop.pdf]]
+
+*** Automatic Operation Counting :noexport:
+Can obtain /parametric/, piecewise polynomial operation counts/bounds[fn:2], directly from IR:
+- \(\displaystyle \text{Flops performed} \approx \sum_{\text{Statement $s$}} |\operatorname{Domain}(s)| \cdot \text{flops}(s)\)
+- \(\displaystyle \text{Mem. Ops performed} \le \sum_{\text{Statement $s$}} |\operatorname{Domain}(s)| \cdot \text{Mem. Ops}(s)\)
+- \(\displaystyle \text{Mem. Ops performed} \ge \sum_{\text{Variable $v$}} |\text{Access Footprint}(v)|\)
+
+Can use these for computer-aided performance model fitting[fn:3].
+
+[fn:2] Verdoolaege et al. 2007
+[fn:3] Stevens, K 2020
+
+* Code-Along
+
+*** Working with Expression Trees :noexport:
+
+Demos: Expression trees
+
+*** Building a Mini Pytato
+
+Demo: Mini Pytato
+*** Lessons from Mini Pytato
+
+- Graphs are an appropriate data structure for expressions
+- A shape axis becomes a loop
+- Processing graphs is necessarily recursive
+- Naive handling of common subexpressions leads to exponential complexity
+
+*** Array Comprehensions / =IndexLambda=
+
+*Observation:* To define an array, just need
+- shape
+- a (scalar) expression for array entry =array[i,j]=.
+
+*Examples:*
+- A $10\times 5$ array defined by $(i,j)\mapsto 3i+5j$
+- A $10\times 10$ array defined by $(i,j)\mapsto \delta_{i,j}$
+- A $10\times 10$ array defined by $(i,j)\mapsto a[i,j]+b[i]$
+
+**** (end)
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+*Idea:* Use that
+- as a large part of the intermediate representation
+- as a pathway toward code generation
+
+  (many operations ``lower'' to scalar expressions)
+
+*** Pytato vs Mini Pytato
+**** Col 1
+  :PROPERTIES:
+  :BEAMER_col: 0.45
+  :END:
+- Computations with multiple results (=DictOfNamedArrays=)
+- Constants (=DataWrapper=)
+- Many more operators, functions
+- Arbitrary shapes (including symbolic)
+- Broadcasting
+- Slicing, Indexing
+  
+**** Col 2
+  :PROPERTIES:
+  :BEAMER_col: 0.45
+  :END:
+  
+- Reductions (e.g. sums over axes)
+- =einsum=, matrix products
+- Metadata ("tags") on arrays, axes
+- Visualization
+- Distributed compute
+- "Call loopy" as an expression node
+
+*** Common Subexpressions
+
+Demo: Common Subexpressions
+
+*** Common Subexpressions
+
+- Every Mapper in pytato will 'collapse' identical expressions
+  into the same (not just equal) objects
+- This turns the *tree* into a *graph*
+- Separate from the decision to allocate a temporary!
+*** The Case for OpenCL
+
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.7
+     :END:
+
+- Host-side programming interface (library)
+- Device-side programming language (C)
+- Device-side intermediate repr. (SPIR-V)
+
+\medskip
+- Same compute abstraction as everyone else
+
+  (focus on *low-level*)
+- Device/vendor-neutral
+  - On current and upcoming leadership-class machines
+  - Will run even with no GPU in sight (e.g. Github CI)
+- Just-In-Time compilation built-in
+- Open-source implementations
+
+  (Pocl, Intel GPU, AMD*, rusticl, clover)
+- Mostly retain access to vendor-specific libraries/capabilties
+# - *What is the alternative?*
+
+**** Logo
+     :PROPERTIES:
+     :BEAMER_col: 0.3
+     :END:
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :width \textwidth
+[[./media/opencl-logo.pdf]]
+
+\credit{Khronos Group}
+
+#+END_CENTER
+*** Uncooperative vendor?
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.55
+     :END:
+
+- OpenCL commoditizes compute
+- Not universally popular with vendors
+- Not an unchangeable fate
+
+\medskip
+pocl-cuda:
+- Based on =nvptx= LLVM target from Google
+- Started by James Price (Bristol)
+- Maintained by a team at Tampere Tech U
+- We at Illinois helped a bit
+- LLVM keeps improving
+- Possible to talk to CUDA libraries
+- Allows profiling
+
+**** Graph
+     :PROPERTIES:
+     :BEAMER_col: 0.45
+     :END:
+
+#+ATTR_LATEX: :width 0.4\textwidth
+[[./media/pocl-nvidia-SHOC-April17.png]]
+
+#+LATEX: {\tiny \credit{\url{http://portablecl.org/cuda-backend.html}}}
+
+#+ATTR_LATEX: :width 0.6\textwidth
+[[./media/pocl-nvidia-SHOC-October20.png]]
+
+#+LATEX: {\tiny \credit{\url{http://portablecl.org/pocl-1.6.html}}}
 *** What and why: polyhedral?
 
 **** Loops
@@ -521,163 +616,6 @@ $+$ parameter: $n \mapsto \{((i,j),(i',j')): \dots\} \subset \mathbb Z^5$
   - no: $i\cdot j$, $n\bmod p$
   - yes: $n \bmod 4$, $4i-3j$
     
-*** Loopy: Example
-
-\[
-  a_i = \sum_{j=1}^{N_q} w_j \partial \psi_i(x_j) \left( \sum_{k=1}^{N_{\text{DoF}}} u_k \partial \phi_k(x_j) \right)
-\]
-\bigskip
-#+BEGIN_SRC python
-knl = lp.make_kernel(
-    "{[e,i,j,k]: 0<=e<nelements and 0<=i,k<ndofs and 0<=j<nq}",
-    """
-    quad(e, j) := sum(k, u[k,e] * phi[k, j])
-    a[e,i] = sum(j, w[j] * psi[i,j] * quad(e, j))
-    """)
-#+END_SRC
-Transformations:
-#+BEGIN_SRC python
-knl = lp.split_iname(knl, "e", 128)
-knl = lp.tag_inames(knl, {"e_outer": "g.0"})
-#+END_SRC
-
-=github.com/inducer/loopy=
-
-*** In the Code-Along
-
-Topics for the code-along:
-- Expression trees/graphs as program representation
-- Let's code a mini \software{pytato}
-- Let's build a finite difference solver with the MIRGE stack
-- Getting your feet wet with \software{Loopy}
-*** Code Transforms                                              :noexport:
-**** Clipart
-:PROPERTIES:
-:BEAMER_col: 0.3
-:END:
-#+ATTR_LATEX: :width \textwidth
-[[./media/transform-crop.pdf]]
-
-**** Content
-:PROPERTIES:
-:BEAMER_col: 0.6
-:END:
-
-- Unroll
-- Stride changes (Row/column/something major)
-- Prefetch
-- Precompute
-- Tile
-- Reorder loops
-- Fix constants
-- Parallelize (Thread/Workgroup)
-- Affine map loop domains
-- Texture-based data access
-- Loop collapse
-
-*** Even More Code Transforms :noexport:
-**** Content
-:PROPERTIES:
-:BEAMER_col: 0.6
-:END:
-- Kernel and Loop *Fusion*
-- *Scans* and *Reductions*
-- Global Barrier by *Kernel Fission*
-- Explicit-SIMD *Vectorization*
-- *Reuse* of Temporary Storage
-- SoA \to AoS
-- Buffering, *Storage substitution*
-- Save flops using Distributive Law
-- Arbitrary nesting of *Data Layouts*
-- Realization of *ILP*
-- Array compression/reindexing [Seghir, et al. `06]
-**** Clipart
-:PROPERTIES:
-:BEAMER_col: 0.4
-:END:
-  
-#+ATTR_LATEX: :width \textwidth
-[[./media/transform-crop.pdf]]
-
-*** Automatic Operation Counting :noexport:
-Can obtain /parametric/, piecewise polynomial operation counts/bounds[fn:2], directly from IR:
-- \(\displaystyle \text{Flops performed} \approx \sum_{\text{Statement $s$}} |\operatorname{Domain}(s)| \cdot \text{flops}(s)\)
-- \(\displaystyle \text{Mem. Ops performed} \le \sum_{\text{Statement $s$}} |\operatorname{Domain}(s)| \cdot \text{Mem. Ops}(s)\)
-- \(\displaystyle \text{Mem. Ops performed} \ge \sum_{\text{Variable $v$}} |\text{Access Footprint}(v)|\)
-
-Can use these for computer-aided performance model fitting[fn:3].
-
-[fn:2] Verdoolaege et al. 2007
-[fn:3] Stevens, K 2020
-
-* Code-Along
-
-*** Working with Expression Trees :noexport:
-
-Demos: Expression trees
-
-*** TODO Array languages and Numpy
-
-APL
-
-/Perhaps a surprise:/ There's an APL hiding in Numpy
-
-*** Building a Mini Pytato
-
-Demo: Mini Pytato
-*** Lessons from Mini Pytato
-
-- Graphs are an appropriate data structure for expressions
-- A shape axis becomes a loop
-- Processing graphs is necessarily recursive
-- Naive handling of common subexpressions leads to exponential complexity
-
-*** Array Comprehensions / =IndexLambda=
-
-*Observation:* To define an array, just need
-- shape
-- a (scalar) expression for array entry =array[i,j]=.
-
-*Examples:*
-- A $10\times 5$ array defined by $(i,j)\mapsto 3i+5j$
-- A $10\times 10$ array defined by $(i,j)\mapsto \delta_{i,j}$
-- A $10\times 10$ array defined by $(i,j)\mapsto a[i,j]+b[i]$
-
-**** (end)
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
-
-*Idea:* Use that
-- as a large part of the intermediate representation
-- as a pathway toward code generation
-
-  (many operations ``lower'' to scalar expressions)
-
-*** Pytato vs Mini Pytato
-**** Col 1
-  :PROPERTIES:
-  :BEAMER_col: 0.45
-  :END:
-- Computations with multiple results (=DictOfNamedArrays=)
-- Constants (=DataWrapper=)
-- Many more operators, functions
-- Arbitrary shapes (including symbolic)
-- Broadcasting
-- Slicing, Indexing
-  
-**** Col 2
-  :PROPERTIES:
-  :BEAMER_col: 0.45
-  :END:
-  
-- Reductions (e.g. sums over axes)
-- =einsum=, matrix products
-- Metadata ("tags") on arrays, axes
-- Visualization
-- Distributed compute
-- "Call loopy" as an expression node
-
 *** A Taste of Loopy
 
 Demo: A Taste of Loopy
@@ -733,6 +671,79 @@ Returns a function that
   - Freeze same graph again: redundant codegen, computation
   - Freeze superset graph: redundant codegen, computation
   - Goal: be smarter in this situation
+
+** Backup slides
+*** PyOpenCL
+
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.7
+     :END:
+\software{PyOpenCL} has 
+
+- Direct access to low-level OpenCL 
+  - Efficiency-minded: compiler cache, kernel enqueue
+  - Made safe for use with Python
+
+    (e.g. `nanny events', deletion semantics)
+- A bare-bones \software{numpy}-like array type
+  - Parallel RNGs, indexing
+  - Numpy-like, but limited broadcasting, most operations are 1D
+- Foundational algorithm templates
+  - Reduction, scan, sort (radix, bitonic), unique, filter, CSR build
+
+\medskip
+https://github.com/inducer/pyopencl \tiny Also: \software{PyCUDA}
+
+**** Py Logo
+     :PROPERTIES:
+     :BEAMER_col: 0.3
+     :END:
+
+#+BEGIN_CENTER
+
+#+ATTR_LATEX: :width 0.7\textwidth
+[[./media/python-logo-no-shadow.png]]
+
+#+ATTR_LATEX: :width \textwidth
+[[./media/opencl-logo.pdf]]
+
+\credit{Khronos Group, python.org}
+#+END_CENTER
+
+*** The Case for Python
+
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.7
+     :END:
+Frees up mental bandwidth\dots
+
+\hfill for the /actually/ difficult bits
+
+\medskip
+How?
+- *Not* shiny, *not* exciting
+- *No/few* distractions
+  - Duck typing, automatic memory management
+- Emphasizes readability
+- Rich ecosystem of sci-comp related software
+- Good for gluing: less reinventing
+- Easy to deploy
+- `Fast enough' for logistics and code generation
+
+**** Py Logo
+     :PROPERTIES:
+     :BEAMER_col: 0.2
+     :END:
+
+#+BEGIN_CENTER
+
+#+ATTR_LATEX: :width \textwidth
+[[./media/python-logo-no-shadow.png]]
+
+\credit{python.org}
+#+END_CENTER
 
 ** MIRGE in Practice
 *** Actx subclassing for domain-specific transformation          :noexport:
