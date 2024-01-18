@@ -26,13 +26,12 @@
 #+BEAMER_HEADER: \def\credit#1{{\scriptsize[#1]}}
 #+BEAMER_HEADER: \let\b=\boldsymbol
 
-# #+BEAMER_HEADER: \AtBeginSection[] {
-# #+BEAMER_HEADER:   \begin{frame}[shrink]{Outline}
-# #+BEAMER_HEADER:     \linespread{0.8}
-# #+BEAMER_HEADER:     \tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/show/hide]
-# #+BEAMER_HEADER:   \end{frame}
-# #+BEAMER_HEADER: }
-#+BEAMER_HEADER: \AtBeginSection[] { }
+#+BEAMER_HEADER: \AtBeginSection[] {
+#+BEAMER_HEADER:   \begin{frame}[shrink]{Outline}
+#+BEAMER_HEADER:     \linespread{0.8}
+#+BEAMER_HEADER:     \tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/show/hide]
+#+BEAMER_HEADER:   \end{frame}
+#+BEAMER_HEADER: }
 #+BEAMER_HEADER: \AtBeginSubsection[] { }
 
 #+BEAMER_HEADER: \usetikzlibrary{fit}
@@ -43,7 +42,6 @@
 #+BEAMER_HEADER: \newcommand{\software}[1]{\emph{#1}}
 
 * MIRGE
-** Goals and Approaches
 *** ``Programming HPC Machines is Hard''
 
 #+BEGIN_CENTER
@@ -63,14 +61,14 @@ CPUs, GPUs: all subject to similar design pressures
      :END:
 Goal:
 - Build a quantitative understanding of what is possible
-  - I.e. use modeling
-  - Use tools to help
+  - I.e. use modeling, supported by tools
 - Iteratively approach that limit, with human involvement
   - I.e. not a black-box compiler
   - Expect some exposed wiring: *understanding required*
   - Use modeling as a guide
 #  - That said: some things will remain unexplained
 
+\bigskip
 MIRGE: *Ideas and tools* to\dots
 - increase human effectiveness and efficiency
 - help with separation of concerns
@@ -118,7 +116,7 @@ _Stage 3:_ *Rewrite to Scalar IR* \software{Pytato} \to \software{Loopy}
 - Introduce time, memory, loops
   
 _Stage 4:_ *Scalar IR Transformations* \software{Array Context} and \software{Loopy}
-- E.g. parallelize, optimize for the memory hierarchy
+- E.g. parallelize, loop/kernel fusion
   
 _Stage 5:_ *Emit Target Code* /Loopy/ \to /OpenCL/
     
@@ -167,9 +165,16 @@ _Stage 5:_ *Emit Target Code* /Loopy/ \to /OpenCL/
 \mbox{Q = q(B)} $\quad$
 \mbox{R = r(G,P,Q)}
 #+END_CENTER
-*** Numpy, Array programming
+*** Numpy: Array programming
 
-Numpy is an /array programming language/. What can you do with that?
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.7
+     :END:
+Numpy is an /array programming language/.
+
+\medskip
+What can you do with that?
 
 - =a + b - 3=
 - =a[:, 4].reshape(10, 1) + b=
@@ -179,10 +184,85 @@ Numpy is an /array programming language/. What can you do with that?
 - =np.where(a > 3, 0, 1)=
 - =np.einsum("ij,j->i", a, b)=
 - =np.sum(a, axis=0)=
-- =np.concatenate(a, axis=0)=
+- =np.concatenate((a, b), axis=0)=
 
 If familiar: a little like `fully vectorized Matlab'
 
+**** Clip art
+     :PROPERTIES:
+     :BEAMER_col: 0.3
+     :END:
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :width \textwidth
+[[./media/xray-logo.png]]
+
+\credit{XRay Project}
+#+END_CENTER
+*** User-Visible Restrictions (the "-ish" in numpy-ish)
+
+**** Clip art
+     :PROPERTIES:
+     :BEAMER_col: 0.2
+     :END:
+     
+#+BEGIN_CENTER
+#+ATTR_LATEX: :width \textwidth
+[[./media/emoji-surprise.pdf]]
+
+\credit{Bootstrap Icons}
+#+END_CENTER
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.8
+     :END:
+- Data is computed lazily
+  - "Looking at the data" is costly
+  - Fine: =np.where(x > 15, 1, 0)=
+  - Not fine: =if x[0] > 15: print("BAD")=
+- "In-place" modification is not allowed
+  - Once created, an array is constant
+- Looping over an array is very costly
+  - Resulting DAG will be proportional to array size
+- Does not encode memory layout (i.e. no stride trickery)
+- For code with pre-recorded traces ("compiled"):
+  - Python code is only run *once*
+  - Needed for repeated tasks (e.g. time step)
+  - /Cannot/ look at data (run with placeholder arrays)
+
+*** Numpy Switcheroo: Array Context
+
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.8
+     :END:
+Replacing numpy:
+- NOT: =import numpy as np= \to =import mystuff as np=
+- INSTEAD: =actx.np.zeros(...)=
+
+\bigskip
+Why?
+- `Real' numpy used alongside, e.g. by supporting libraries
+- Avoids =np.mystuff(...)=: The =numpy= namespace belongs to numpy.
+- Avoids global state for device selection (e.g. Jax) 
+- Natural place for additional API: E.g. =actx.freeze()=
+- Can be subclassed by user to supply transform strategies
+
+\medskip
+(=actx= is a *user-controlled instance* of a *user-controlled subclass* of =ArrayContext=.)
+
+**** Clip art
+     :PROPERTIES:
+     :BEAMER_col: 0.2
+     :END:
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :width 0.7\textwidth
+[[./media/box-heart.pdf]]
+
+\bigskip
+\credit{Bootstrap Icons}
+#+END_CENTER
 *** The Case for Code Transformation
 
 **** Clip art
@@ -202,6 +282,16 @@ If familiar: a little like `fully vectorized Matlab'
      :BEAMER_col: 0.7
      :END:
      
+- Program is a data structure
+- Start with `math' (\approx =numpy=)
+- Gradually add detail
+- Annotations *descriptive*, not *prescriptive*
+  
+As opposed to:
+- Directives (a la OpenMP/OpenACC)
+- Libraries
+
+Properties:
 - Separation of concerns:
 
   additive rather than multiplicative effort
@@ -210,16 +300,6 @@ If familiar: a little like `fully vectorized Matlab'
 
   /not/ specifying details prematurely is a virtue
 
-Approach:
-- Program is a data structure
-- Start with `math' (\approx =numpy=)
-- Gradually add detail
-- Annotations at most *descriptive*, not *prescriptive*
-# - `Own' your problem representation
-  
-As opposed to:
-- Directives (a la OpenMP/OpenACC)
-- Libraries
 
 *** The Case for Just-in-Time Compilation
 
@@ -249,21 +329,39 @@ As opposed to:
 - Challenge: JIT cost must remain under control
   - At least: /Caching/ easily avoids /repeated/ expense
 
-** The Two Intermediate Representations
-*** Array IR: User-Visible Restrictions
+*** Loopy: A Glimpse
 
-- Data is computed lazily
-  - "Looking at the data" is costly
-  - Fine: =np.where(x > 15, 1, 0)=
-  - Not fine: =if x[0] > 15: print("BAD")=
-- "In-place" modification is not allowed
-  - Once created, an array is constant
-- Looping over an array is very costly
-  - Resulting DAG will be proportional to array size
-  - Goal: DAG is $O(1)$ in problem size
-- Does not encode memory layout (i.e. no stride trickery)
+\[
+  a_i = \sum_{j=1}^{N_q} w_j \partial \psi_i(x_j) \left( \sum_{k=1}^{N_{\text{DoF}}} u_k \partial \phi_k(x_j) \right)
+\]
+\bigskip
+#+BEGIN_SRC python
+knl = lp.make_kernel(
+    "{[e,i,j,k]: 0<=e<nelements and 0<=i,k<ndofs and 0<=j<nq}",
+    """
+    quad(e, j) := sum(k, u[k,e] * phi[k, j])
+    a[e,i] = sum(j, w[j] * psi[i,j] * quad(e, j))
+    """)
+#+END_SRC
+Transformations:
+#+BEGIN_SRC python
+knl = lp.split_iname(knl, "e", 128)
+knl = lp.tag_inames(knl, {"e_outer": "g.0"})
+#+END_SRC
 
-*** TODO Numpy switcheroo: The array context
+=github.com/inducer/loopy=
+
+*** In the Code-Along
+
+Roadmap for the code-along:
+- Let's code a mini \software{pytato}
+  - Expression trees/graphs as program representation
+  - Lowering to \software{loopy}
+- Let's build a finite difference solver with the MIRGE stack
+- Getting your feet wet with \software{Loopy}
+*** Pytato Code Generation                                       :noexport:
+
+Demo: Code Generation
 *** Lowering to Loopy: Decisions to Make                         :noexport:
 - Which results to store in memory
   - OpenCL/GPU Kernels start and end in memory (\to kernel fusion)
@@ -275,9 +373,6 @@ As opposed to:
 - Which algorithm to use (mainly for matvecs)
   - What temporaries to use...
   - ...and where to place them
-*** Pytato Code Generation :noexport:
-
-Demo: Code Generation
 *** How are those decisions made? :noexport:
 
 - Quite simply, for now
@@ -308,35 +403,6 @@ Needs:
 - \tiny /T. Ben-Nun et al./ ``Stateful Dataflow Multigraphs: A Data-Centric Model for High-Performance Parallel Programs.'', SC `19. (2019)
 \normalsize
 
-*** Loopy: A Glimpse
-
-\[
-  a_i = \sum_{j=1}^{N_q} w_j \partial \psi_i(x_j) \left( \sum_{k=1}^{N_{\text{DoF}}} u_k \partial \phi_k(x_j) \right)
-\]
-\bigskip
-#+BEGIN_SRC python
-knl = lp.make_kernel(
-    "{[e,i,j,k]: 0<=e<nelements and 0<=i,k<ndofs and 0<=j<nq}",
-    """
-    quad(e, j) := sum(k, u[k,e] * phi[k, j])
-    a[e,i] = sum(j, w[j] * psi[i,j] * quad(e, j))
-    """)
-#+END_SRC
-Transformations:
-#+BEGIN_SRC python
-knl = lp.split_iname(knl, "e", 128)
-knl = lp.tag_inames(knl, {"e_outer": "g.0"})
-#+END_SRC
-
-=github.com/inducer/loopy=
-
-*** In the Code-Along
-
-Roadmap for the code-along:
-- Let's code a mini \software{pytato}
-  - Expression trees/graphs as program representation
-- Let's build a finite difference solver with the MIRGE stack
-- Getting your feet wet with \software{Loopy}
 *** Code Transforms                                              :noexport:
 **** Clipart
 :PROPERTIES:
@@ -399,13 +465,9 @@ Can use these for computer-aided performance model fitting[fn:3].
 
 * Code-Along
 
-*** Working with Expression Trees :noexport:
-
-Demos: Expression trees
-
 *** Building a Mini Pytato
 
-Demo: Mini Pytato
+Notebook: Mini Pytato
 *** Lessons from Mini Pytato
 
 - Graphs are an appropriate data structure for expressions
@@ -459,87 +521,45 @@ Demo: Mini Pytato
 - Distributed compute
 - "Call loopy" as an expression node
 
-*** Common Subexpressions
+*** Let's code finite differences
 
-Demo: Common Subexpressions
+Notebook: Finite Difference Code-Along
 
-*** Common Subexpressions
+*** What is an array context?
 
-- Every Mapper in pytato will 'collapse' identical expressions
-  into the same (not just equal) objects
-- This turns the *tree* into a *graph*
-- Separate from the decision to allocate a temporary!
-*** The Case for OpenCL
+- =actx.np=
+- =actx.freeze= / =actx.thaw=
+- =actx.np.zeros=
+- =actx.from_numpy= / =actx.to_numpy=
+- =actx.tag= / =actx.tag_axis=
+- =actx.compile(f)=
 
-**** Text
-     :PROPERTIES:
-     :BEAMER_col: 0.7
-     :END:
+*** What happens in =PytatoPyOpenCLACtx.compile(f)=?
 
-- Host-side programming interface (library)
-- Device-side programming language (C)
-- Device-side intermediate repr. (SPIR-V)
+Returns a function that
+- once called, looks at arguments passed (which maybe array containers)
+- replaces actx arrays with placeholders
+- Calls =f= with those placeholders
+- Take the resulting =pytato= DAG, feed to Loopy
+- Lastly, call the generated loopy code with the passed arguments
+  - Return results as *actual data* (=pyoepncl= arrays)
+- If called again with arguments of matching type/shape:
+  - do not call =f=
+  - go straight to calling generated code
 
-\medskip
-- Same compute abstraction as everyone else
+*** What happens in =PytatoPyOpenCLACtx.freeze=?
 
-  (focus on *low-level*)
-- Device/vendor-neutral
-  - On current and upcoming leadership-class machines
-  - Will run even with no GPU in sight (e.g. Github CI)
-- Just-In-Time compilation built-in
-- Open-source implementations
+- Simple: build code to evaluate computation graph
+  - Return result as actual data
+- No placeholders, only =DataWrapper= (=constant) instances
+  - =thaw=: package data in a =DataWrapper=
+- Try to avoid redundant code generation
+  - But: expensive! Always at least need to compare (and therefore, traverse!) graphs
+- Potential gotchas
+  - Freeze same graph again: redundant codegen, computation
+  - Freeze superset graph: redundant codegen, computation
+  - Goal: be smarter in this situation
 
-  (Pocl, Intel GPU, AMD*, rusticl, clover)
-- Mostly retain access to vendor-specific libraries/capabilties
-# - *What is the alternative?*
-
-**** Logo
-     :PROPERTIES:
-     :BEAMER_col: 0.3
-     :END:
-
-#+BEGIN_CENTER
-#+ATTR_LATEX: :width \textwidth
-[[./media/opencl-logo.pdf]]
-
-\credit{Khronos Group}
-
-#+END_CENTER
-*** Uncooperative vendor?
-**** Text
-     :PROPERTIES:
-     :BEAMER_col: 0.55
-     :END:
-
-- OpenCL commoditizes compute
-- Not universally popular with vendors
-- Not an unchangeable fate
-
-\medskip
-pocl-cuda:
-- Based on =nvptx= LLVM target from Google
-- Started by James Price (Bristol)
-- Maintained by a team at Tampere Tech U
-- We at Illinois helped a bit
-- LLVM keeps improving
-- Possible to talk to CUDA libraries
-- Allows profiling
-
-**** Graph
-     :PROPERTIES:
-     :BEAMER_col: 0.45
-     :END:
-
-#+ATTR_LATEX: :width 0.4\textwidth
-[[./media/pocl-nvidia-SHOC-April17.png]]
-
-#+LATEX: {\tiny \credit{\url{http://portablecl.org/cuda-backend.html}}}
-
-#+ATTR_LATEX: :width 0.6\textwidth
-[[./media/pocl-nvidia-SHOC-October20.png]]
-
-#+LATEX: {\tiny \credit{\url{http://portablecl.org/pocl-1.6.html}}}
 *** What and why: polyhedral?
 
 **** Loops
@@ -623,22 +643,7 @@ $+$ parameter: $n \mapsto \{((i,j),(i',j')): \dots\} \subset \mathbb Z^5$
 
 Demo: A Taste of Loopy
 
-*** TODO Array context: why /another/ layer?
-*** What is an array context?
-
-- =actx.np=
-- =actx.freeze= / =actx.thaw=
-- =actx.zeros=
-- =actx.from_numpy= / =actx.to_numpy=
-- =actx.tag= / =actx.tag_axis=
-- =actx.compile(f)=
-
-*** Let's code finite differences
-
-Demo: Finite Difference Code-Along
-
-*** TODO Why these deviations from numpy? :noexport:
-*** What is an array container? :noexport:
+*** What is an array container?
 
 - A thing that can contain actx arrays *and* other array containers
 - Allows "serialization" and "deserialization", i.e. generic traversals
@@ -649,33 +654,77 @@ Demo: Finite Difference Code-Along
 - Defined in =arraycontext=
 - Works with many =ArrayContext= operations
   
-*** What happens in =PytatoPyOpenCLACtx.compile(f)=? :noexport:
+*** The Case for OpenCL
 
-Returns a function that
-- once called, looks at arguments passed (which maybe array containers)
-- replaces actx arrays with placeholders
-- Calls =f= with those placeholders
-- Take the resulting =pytato= DAG, feed to Loopy
-- Lastly, call the generated loopy code with the passed arguments
-  - Return results as *actual data* (=pyoepncl= arrays)
-- If called again with arguments of matching type/shape:
-  - do not call =f=
-  - go straight to calling generated code
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.7
+     :END:
 
-*** What happens in =PytatoPyOpenCLACtx.freeze=? :noexport:
+- Host-side programming interface (library)
+- Device-side programming language (C)
+- Device-side intermediate repr. (SPIR-V)
 
-- Simple: build code to evaluate computation graph
-  - Return result as actual data
-- No placeholders, only =DataWrapper= (=constant) instances
-  - =thaw=: package data in a =DataWrapper=
-- Try to avoid redundant code generation
-  - But: expensive! Always at least need to compare (and therefore, traverse!) graphs
-- Potential gotchas
-  - Freeze same graph again: redundant codegen, computation
-  - Freeze superset graph: redundant codegen, computation
-  - Goal: be smarter in this situation
+\medskip
+- Same compute abstraction as everyone else
 
-** Backup slides
+  (focus on *low-level*)
+- Device/vendor-neutral
+  - On current and upcoming leadership-class machines
+  - Will run even with no GPU in sight (e.g. Github CI)
+- Just-In-Time compilation built-in
+- Open-source implementations
+
+  (Pocl, Intel GPU, AMD*, rusticl, clover)
+- Mostly retain access to vendor-specific libraries/capabilties
+# - *What is the alternative?*
+
+**** Logo
+     :PROPERTIES:
+     :BEAMER_col: 0.3
+     :END:
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :width \textwidth
+[[./media/opencl-logo.pdf]]
+
+\credit{Khronos Group}
+
+#+END_CENTER
+*** Uncooperative vendor?
+**** Text
+     :PROPERTIES:
+     :BEAMER_col: 0.55
+     :END:
+
+- OpenCL commoditizes compute
+- Not universally popular with vendors
+- Not an unchangeable fate
+
+\medskip
+pocl-cuda:
+- Based on =nvptx= LLVM target from Google
+- Started by James Price (Bristol)
+- Maintained by a team at Tampere Tech U
+- We at Illinois helped a bit
+- LLVM keeps improving
+- Possible to talk to CUDA libraries
+- Allows profiling
+
+**** Graph
+     :PROPERTIES:
+     :BEAMER_col: 0.45
+     :END:
+
+#+ATTR_LATEX: :width 0.4\textwidth
+[[./media/pocl-nvidia-SHOC-April17.png]]
+
+#+LATEX: {\tiny \credit{\url{http://portablecl.org/cuda-backend.html}}}
+
+#+ATTR_LATEX: :width 0.6\textwidth
+[[./media/pocl-nvidia-SHOC-October20.png]]
+
+#+LATEX: {\tiny \credit{\url{http://portablecl.org/pocl-1.6.html}}}
 *** PyOpenCL
 
 **** Text
